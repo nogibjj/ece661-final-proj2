@@ -13,6 +13,7 @@ import pretty_midi
 from scipy.io import wavfile
 import numpy as np
 import io
+import muspy
 # import fluidsynth
 
 max_seq_len = 256
@@ -34,7 +35,7 @@ for dic in classifier_dataset:
 
 model1.load_state_dict(torch.load('checkpoints/transformer_v3.pt'))
 model2.load_state_dict(torch.load('checkpoints/transformer.pt'))
-model3.load_state_dict(torch.load('checkpoints/generator.pt'))
+model3.load_state_dict(torch.load('checkpoints/generator_c.pt'))
 
 def generate(emotion = None):
     # Generate music based on the selected emotion
@@ -69,7 +70,7 @@ def generate(emotion = None):
 
         output1 = model1(input)
         output2 = model2(input.unsqueeze(0), target.unsqueeze(0))
-        output3 = model3(input)
+        output3 = model3(input.unsqueeze(0))
         # Apply temperature to the output probabilities for diversity
 
         probabilities1 = softmax(output1.squeeze() / TEMPERATURE, dim=-1)
@@ -133,6 +134,10 @@ def main():
             # for key in generated_musics.keys():
 
             midi_file = 'presentation/original.mid'
+            music =  muspy.read_midi(midi_file)
+            plotter = muspy.show_score(music, figsize=(10, 6), clef="treble", clef_octave=0)
+            fig = plotter.fig
+            fig.savefig('presentation/original.png')
             midi_data = pretty_midi.PrettyMIDI(midi_file)
             audio_data = midi_data.fluidsynth()
             audio_data = np.int16(
@@ -143,6 +148,10 @@ def main():
             wavfile.write(virtualfile0, 44100, audio_data)
 
             midi_file = 'presentation/model1.mid'
+            music =  muspy.read_midi(midi_file)
+            plotter = muspy.show_score(music, figsize=(10, 6), clef="treble", clef_octave=0)
+            fig = plotter.fig
+            fig.savefig('presentation/model1.png')
             midi_data = pretty_midi.PrettyMIDI(midi_file)
             audio_data = midi_data.fluidsynth()
             audio_data = np.int16(
@@ -153,6 +162,10 @@ def main():
             wavfile.write(virtualfile1, 44100, audio_data)
 
             midi_file = 'presentation/model2.mid'
+            music =  muspy.read_midi(midi_file)
+            plotter = muspy.show_score(music, figsize=(10, 6), clef="treble", clef_octave=0)
+            fig = plotter.fig
+            fig.savefig('presentation/model2.png')
             midi_data = pretty_midi.PrettyMIDI(midi_file)
             audio_data = midi_data.fluidsynth()
             audio_data = np.int16(
@@ -163,6 +176,10 @@ def main():
             wavfile.write(virtualfile2, 44100, audio_data)
 
             midi_file = 'presentation/model3.mid'
+            music =  muspy.read_midi(midi_file)
+            plotter = muspy.show_score(music, figsize=(10, 6), clef="treble", clef_octave=0)
+            fig = plotter.fig
+            fig.savefig('presentation/model3.png')
             midi_data = pretty_midi.PrettyMIDI(midi_file)
             audio_data = midi_data.fluidsynth()
             audio_data = np.int16(
@@ -172,13 +189,20 @@ def main():
             virtualfile3 = io.BytesIO()
             wavfile.write(virtualfile3, 44100, audio_data)
         st.text("Original Music")
+        st.image(Image.open('presentation/original.png'))
         st.audio(virtualfile0)
-        st.text("Generated Music by transformer model candidate 1")
+        
+        st.text("Generated Music by Transformer Decoder Model")
+        st.image(Image.open('presentation/model1.png'))
         st.audio(virtualfile1)
-        st.text("Generated Music by transformer model candidate 2")
-        st.audio(virtualfile2)
-        st.text("Generated Music by transformr gan")
+
+        st.text("Generated Music by Transformer Encoder Decoder Model")
+        st.image(Image.open('presentation/model3.png'))
         st.audio(virtualfile3)
+
+        st.text("Generated Music by Transformer Gan Model")
+        st.image(Image.open('presentation/model2.png'))
+        st.audio(virtualfile2)
 
     # menu = ["Home", "Choose Your Song By Singer","Choose Your Song By Song Name","Interaction with the dataset"]
     # choice = st.sidebar.selectbox("Menu", menu)
@@ -271,4 +295,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-    
